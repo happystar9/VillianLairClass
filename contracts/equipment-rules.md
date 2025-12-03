@@ -9,7 +9,7 @@
 Equipment represents the tools, weapons, vehicles, and doomsday devices used in evil schemes. Proper maintenance and assignment are crucial for scheme success. This document specifies the business rules for equipment management.
 
 ## Rule 1: Condition Degradation
-
+## Test
 **Rule ID**: BR-E-001
 **Priority**: High
 **Category**: Behavioral
