@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Collections.Generic;
+using System.Linq;
 using System.Drawing;
 using VillainLairManager.Models;
 
@@ -36,7 +37,7 @@ public partial class MinionManagementForm : Form
 
         var minionsDataGridView = new DataGridView
         {
-            Location = new Point(20, 50),
+            Location = new Point(20, 60),
             Size = new Size(800, 400),
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
             ReadOnly = true,
@@ -59,40 +60,109 @@ public partial class MinionManagementForm : Form
         minionsDataGridView.DataSource = binding;
 
         this.Controls.Add(minionsDataGridView);
+
+        var nameLabel = new Label { Text = "Name:", Location = new Point(20, 12), AutoSize = true };
+        var nameTextBox = new TextBox { Location = new Point(80, 10), Size = new Size(160, 23) };
+
+        var specialtyLabel = new Label { Text = "Specialty:", Location = new Point(250, 12), AutoSize = true };
+        var specialtyTextBox = new TextBox { Location = new Point(330, 10), Size = new Size(120, 23) };
+
+        var moodLabel = new Label { Text = "Mood:", Location = new Point(460, 12), AutoSize = true };
+        var moodTextBox = new TextBox { Location = new Point(510, 10), Size = new Size(220, 23) };
+
+        var skillLabel = new Label { Text = "Skill:", Location = new Point(460, 35), AutoSize = true };
+        var skillUpDown = new NumericUpDown { Location = new Point(510, 33), Size = new Size(60, 23), Minimum = 1, Maximum = 10, Value = 1 };
+
+        var salaryLabel = new Label { Text = "Salary:", Location = new Point(580, 12), AutoSize = true };
+        var salaryUpDown = new NumericUpDown { Location = new Point(630, 33), Size = new Size(100, 23), Minimum = 0, Maximum = 1000000, DecimalPlaces = 0, Increment = 100 };
+
+        var baseLabel = new Label { Text = "Base:", Location = new Point(20, 35), AutoSize = true };
+        var baseCombo = new ComboBox { Location = new Point(80, 33), Size = new Size(160, 23), DropDownStyle = ComboBoxStyle.DropDownList };
+
+        var schemeLabel = new Label { Text = "Scheme:", Location = new Point(250, 35), AutoSize = true };
+        var schemeCombo = new ComboBox { Location = new Point(330, 33), Size = new Size(120, 23), DropDownStyle = ComboBoxStyle.DropDownList };
+
+        var bases = DatabaseHelper.GetAllBases();
+        baseCombo.DataSource = bases;
+        baseCombo.DisplayMember = "Name";
+        baseCombo.ValueMember = "BaseId";
+        baseCombo.SelectedIndex = -1;
+
+        var schemes = DatabaseHelper.GetAllSchemes();
+        schemeCombo.DataSource = schemes;
+        schemeCombo.DisplayMember = "Name";
+        schemeCombo.ValueMember = "SchemeId";
+        schemeCombo.SelectedIndex = -1;
+
+        this.Controls.Add(nameLabel);
+        this.Controls.Add(nameTextBox);
+        this.Controls.Add(specialtyLabel);
+        this.Controls.Add(specialtyTextBox);
+        this.Controls.Add(skillLabel);
+        this.Controls.Add(skillUpDown);
+        this.Controls.Add(salaryLabel);
+        this.Controls.Add(salaryUpDown);
+        this.Controls.Add(baseLabel);
+        this.Controls.Add(baseCombo);
+        this.Controls.Add(schemeLabel);
+        this.Controls.Add(schemeCombo);
+        this.Controls.Add(moodLabel);
+        this.Controls.Add(moodTextBox);
         Button addButton = new Button
         {
             Text = "Add",
-            Location = new Point(20, 470),
+            Location = new Point(775, 16),
             Size = new Size(100, 30)
         };
         addButton.Click += (sender, e) =>
         {
-            var newMinion = new Minion
-            {
-            Name = "New Minion",
-            Specialty = "Unknown",
-            SkillLevel = 1,
-            SalaryDemand = 1000
-            };
-
             try
             {
+                var name = string.IsNullOrWhiteSpace(nameTextBox.Text) ? "New Minion" : nameTextBox.Text.Trim();
+                var specialty = string.IsNullOrWhiteSpace(specialtyTextBox.Text) ? "Unknown" : specialtyTextBox.Text.Trim();
+                var skill = (int)skillUpDown.Value;
+                var salary = (decimal)salaryUpDown.Value;
+                var mood = moodTextBox.Text?.Trim();
 
-            // Update bound list / DataGridView
-            binding.Add(newMinion);
+                int? baseId = null;
+                if (baseCombo.SelectedIndex >= 0 && baseCombo.SelectedValue != null)
+                    baseId = Convert.ToInt32(baseCombo.SelectedValue);
 
-            // Select and scroll to the newly added row
-            minionsDataGridView.ClearSelection();
-            var index = binding.IndexOf(newMinion);
-            if (index >= 0)
-            {
-                minionsDataGridView.Rows[index].Selected = true;
-                minionsDataGridView.FirstDisplayedScrollingRowIndex = index;
-            }
+                int? schemeId = null;
+                if (schemeCombo.SelectedIndex >= 0 && schemeCombo.SelectedValue != null)
+                    schemeId = Convert.ToInt32(schemeCombo.SelectedValue);
+
+                var newMinion = new Minion
+                {
+                    MinionId = 0,
+                    Name = name,
+                    Specialty = specialty,
+                    SkillLevel = skill,
+                    SalaryDemand = salary,
+                    LoyaltyScore = 50,
+                    CurrentBaseId = baseId,
+                    CurrentSchemeId = schemeId,
+                    MoodStatus = string.IsNullOrWhiteSpace(mood) ? "Neutral" : mood,
+                    LastMoodUpdate = DateTime.Now
+                };
+
+                binding.Add(newMinion);
+
+                // Clear inputs
+                nameTextBox.Text = string.Empty;
+                specialtyTextBox.Text = string.Empty;
+                skillUpDown.Value = 1;
+                salaryUpDown.Value = 0;
+                baseCombo.SelectedIndex = -1;
+                schemeCombo.SelectedIndex = -1;
+                moodTextBox.Text = string.Empty;
+                nameTextBox.Focus();
+
+
             }
             catch (Exception ex)
             {
-            MessageBox.Show("Failed to add minion: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Failed to add minion: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         };
         this.Controls.Add(addButton);
@@ -152,7 +222,16 @@ public partial class MinionManagementForm : Form
         };
         refreshButton.Click += (sender, e) =>
         {
-            // TODO: Implement refresh minion logic
+            try
+            {
+                var refreshed = DatabaseHelper.GetAllMinions();
+                binding = new BindingList<Minion>(refreshed);
+                minionsDataGridView.DataSource = binding;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to refresh minions: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         };
         this.Controls.Add(refreshButton);
     }
