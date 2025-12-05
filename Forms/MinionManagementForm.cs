@@ -175,7 +175,28 @@ public partial class MinionManagementForm : Form
         };
         updateButton.Click += (sender, e) =>
         {
-            // TODO: Implement update minion logic
+            try
+            {
+                var all = binding.ToList();
+
+                foreach (var minion in all)
+                {
+                    if (minion.MinionId > 0)
+                    {
+                        DatabaseHelper.UpdateMinion(minion);
+                    }
+                    else
+                    {
+                        DatabaseHelper.InsertMinion(minion);
+                    }
+                }
+
+                MessageBox.Show("All minions saved to database.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to save minions: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         };
         this.Controls.Add(updateButton);
 
