@@ -117,7 +117,30 @@ public partial class MinionManagementForm : Form
         };
         deleteButton.Click += (sender, e) =>
         {
-            // TODO: Implement delete minion logic
+                var toDelete = new List<Minion>();
+                foreach (DataGridViewRow row in minionsDataGridView.SelectedRows)
+                {
+                    if (row?.DataBoundItem is Minion m)
+                        toDelete.Add(m);
+                }
+
+                if (toDelete.Count == 0)
+                    return;
+
+                var result = MessageBox.Show($"Are you sure you want to delete the selected minion(s) This cannot be undone.", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result != DialogResult.Yes)
+                    return;
+
+                foreach (var minion in toDelete)
+                {
+                    if (minion.MinionId > 0)
+                    {
+                        DatabaseHelper.DeleteMinion(minion.MinionId);
+                    }
+
+                    binding.Remove(minion);
+                }
+            
         };
         this.Controls.Add(deleteButton);
 
