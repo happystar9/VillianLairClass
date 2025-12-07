@@ -1,5 +1,4 @@
 using System;
-using VillainLairManager.Utils;
 
 namespace VillainLairManager.Models
 {
@@ -25,7 +24,7 @@ namespace VillainLairManager.Models
         // This calculation is also duplicated in forms (major anti-pattern)
         public int CalculateSuccessLikelihood()
         {
-            int baseSuccess = 50;
+            int baseSuccess = AppSettings.Instance.BaseSuccessLikelihood;
 
             // Get assigned minions from database (model accessing database - anti-pattern)
             var assignedMinions = DatabaseHelper.GetAllMinions();
@@ -53,7 +52,7 @@ namespace VillainLairManager.Models
             foreach (var equipment in assignedEquipment)
             {
                 if (equipment.AssignedToSchemeId == this.SchemeId &&
-                    equipment.Condition >= ConfigManager.MinEquipmentCondition)
+                    equipment.Condition >= AppSettings.Instance.MinEquipmentCondition)
                 {
                     workingEquipmentCount++;
                 }

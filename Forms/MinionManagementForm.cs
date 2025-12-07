@@ -118,8 +118,8 @@ public partial class MinionManagementForm : Form
         {
             try
             {
-                var name = string.IsNullOrWhiteSpace(nameTextBox.Text) ? "New Minion" : nameTextBox.Text.Trim();
-                var specialty = string.IsNullOrWhiteSpace(specialtyTextBox.Text) ? "Unknown" : specialtyTextBox.Text.Trim();
+                var name = string.IsNullOrWhiteSpace(nameTextBox.Text) ? AppSettings.Instance.DefaultMinionName : nameTextBox.Text.Trim();
+                var specialty = string.IsNullOrWhiteSpace(specialtyTextBox.Text) ? AppSettings.Instance.DefaultSpecialty : specialtyTextBox.Text.Trim();
                 var skill = (int)skillUpDown.Value;
                 var salary = (decimal)salaryUpDown.Value;
                 var mood = moodTextBox.Text?.Trim();
@@ -139,10 +139,10 @@ public partial class MinionManagementForm : Form
                     Specialty = specialty,
                     SkillLevel = skill,
                     SalaryDemand = salary,
-                    LoyaltyScore = 50,
+                    LoyaltyScore = AppSettings.Instance.DefaultMinionLoyalty,
                     CurrentBaseId = baseId,
                     CurrentSchemeId = schemeId,
-                    MoodStatus = string.IsNullOrWhiteSpace(mood) ? "Neutral" : mood,
+                    MoodStatus = string.IsNullOrWhiteSpace(mood) ? AppSettings.Instance.DefaultMood : mood,
                     LastMoodUpdate = DateTime.Now
                 };
 

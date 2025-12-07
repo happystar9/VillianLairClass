@@ -289,9 +289,9 @@ public partial class SchemeManagementForm : Form
             lblSuccessLikelihood.Text = $"{scheme.SuccessLikelihood}%";
 
             // Color code the success likelihood
-            if (scheme.SuccessLikelihood >= 70)
+            if (scheme.SuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodHighThreshold)
                 lblSuccessLikelihood.ForeColor = Color.Green;
-            else if (scheme.SuccessLikelihood >= 40)
+            else if (scheme.SuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodMediumThreshold)
                 lblSuccessLikelihood.ForeColor = Color.Orange;
             else
                 lblSuccessLikelihood.ForeColor = Color.Red;
@@ -520,9 +520,9 @@ public partial class SchemeManagementForm : Form
         lblSuccessLikelihood.Text = $"{newSuccessLikelihood}%";
 
         // Color code the success likelihood
-        if (newSuccessLikelihood >= 70)
+        if (newSuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodHighThreshold)
             lblSuccessLikelihood.ForeColor = Color.Green;
-        else if (newSuccessLikelihood >= 40)
+        else if (newSuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodMediumThreshold)
             lblSuccessLikelihood.ForeColor = Color.Orange;
         else
             lblSuccessLikelihood.ForeColor = Color.Red;
@@ -538,7 +538,7 @@ public partial class SchemeManagementForm : Form
     // This is a duplicate of the calculation in EvilScheme.CalculateSuccessLikelihood()
     private int CalculateSuccessLikelihoodInUI(EvilScheme scheme)
     {
-        int baseSuccess = 50;
+    int baseSuccess = AppSettings.Instance.BaseSuccessLikelihood;
 
         // Get assigned minions from database (UI accessing database - anti-pattern)
         var assignedMinions = DatabaseHelper.GetAllMinions();
@@ -570,7 +570,7 @@ public partial class SchemeManagementForm : Form
         {
             foreach (var equipment in assignedEquipment)
             {
-                if (equipment.AssignedToSchemeId == scheme.SchemeId && equipment.Condition >= 50)
+                if (equipment.AssignedToSchemeId == scheme.SchemeId && equipment.Condition >= AppSettings.Instance.MinEquipmentCondition)
                 {
                     workingEquipmentCount++;
                 }

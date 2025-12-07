@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using VillainLairManager.Models;
-using VillainLairManager.Utils;
 
 namespace VillainLairManager
 {
@@ -21,7 +20,7 @@ namespace VillainLairManager
             if (_isInitialized)
                 return;
 
-            string dbPath = ConfigManager.DatabasePath;
+            string dbPath = AppSettings.Instance.DatabasePath;
             _connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
             _connection.Open();
             _isInitialized = true;

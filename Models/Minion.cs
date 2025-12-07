@@ -1,5 +1,4 @@
 using System;
-using VillainLairManager.Utils;
 
 namespace VillainLairManager.Models
 {
@@ -23,12 +22,12 @@ namespace VillainLairManager.Models
         public void UpdateMood()
         {
             // Business rules embedded in model
-            if (this.LoyaltyScore > ConfigManager.HighLoyaltyThreshold)
-                this.MoodStatus = ConfigManager.MoodHappy;
-            else if (this.LoyaltyScore < ConfigManager.LowLoyaltyThreshold)
-                this.MoodStatus = ConfigManager.MoodBetrayal;
+            if (this.LoyaltyScore > AppSettings.Instance.HighLoyaltyThreshold)
+                this.MoodStatus = AppSettings.Instance.MoodHappy;
+            else if (this.LoyaltyScore < AppSettings.Instance.LowLoyaltyThreshold)
+                this.MoodStatus = AppSettings.Instance.MoodBetrayal;
             else
-                this.MoodStatus = ConfigManager.MoodGrumpy;
+                this.MoodStatus = AppSettings.Instance.MoodGrumpy;
 
             this.LastMoodUpdate = DateTime.Now;
 
@@ -50,11 +49,11 @@ namespace VillainLairManager.Models
         {
             if (actualSalaryPaid >= this.SalaryDemand)
             {
-                this.LoyaltyScore += ConfigManager.LoyaltyGrowthRate;
+                this.LoyaltyScore += AppSettings.Instance.LoyaltyGrowthRate;
             }
             else
             {
-                this.LoyaltyScore -= ConfigManager.LoyaltyDecayRate;
+                this.LoyaltyScore -= AppSettings.Instance.LoyaltyDecayRate;
             }
 
             // Clamp to valid range
