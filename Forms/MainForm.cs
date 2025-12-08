@@ -4,6 +4,8 @@ using System.Linq;
 using System.Windows.Forms;
 using VillainLairManager.Models;
 using VillainLairManager.Utils;
+using VillainLairManager.Services;
+using VillainLairManager.Repositories;
 
 namespace VillainLairManager.Forms
 {
@@ -13,9 +15,22 @@ namespace VillainLairManager.Forms
     /// </summary>
     public partial class MainForm : Form
     {
+        private SchemeService _schemeService;
+        private MinionService _minionService;
+        private BaseService _baseService;
+        private EquipmentService _equipmentService;
+        
         public MainForm()
         {
             InitializeComponent();
+            
+            // Initialize services
+            var factory = new RepositoryFactory(AppSettings.Instance.DatabasePath);
+            _schemeService = new SchemeService(factory.Schemes, factory.Minions, factory.Equipment);
+            _minionService = new MinionService(factory.Minions);
+            _baseService = new BaseService(factory.Bases, factory.Minions, factory.Equipment);
+            _equipmentService = new EquipmentService(factory.Equipment, factory.Schemes);
+            
             LoadStatistics(); // Business logic in form load (anti-pattern)
         }
 
@@ -49,11 +64,11 @@ namespace VillainLairManager.Forms
         // This calculation is duplicated from models
         private void LoadStatistics()
         {
-            // Direct database access from UI (anti-pattern)
-            var minions = DatabaseHelper.GetAllMinions();
-            var schemes = DatabaseHelper.GetAllSchemes();
-            var bases = DatabaseHelper.GetAllBases();
-            var equipment = DatabaseHelper.GetAllEquipment();
+            // Use services for data retrieval instead of direct database access
+            var minions = _minionService.GetAllMinions().ToList();
+            var schemes = _schemeService.GetAllSchemes().ToList();
+            var bases = _baseService.GetAllBases().ToList();
+            var equipment = _equipmentService.GetAllEquipment().ToList();
 
             // Minion statistics with duplicated mood calculation
             int happyCount = 0, grumpyCount = 0, betrayalCount = 0;
@@ -75,11 +90,10 @@ namespace VillainLairManager.Forms
             double avgSuccess = 0;
             if (activeSchemes.Any())
             {
-                // Success likelihood calculation duplicated here (anti-pattern)
+                // Use service for success calculation
                 foreach (var scheme in activeSchemes)
                 {
-                    // This is also in EvilScheme.CalculateSuccessLikelihood() - duplication!
-                    int success = scheme.CalculateSuccessLikelihood();
+                    int success = _schemeService.CalculateSuccessLikelihood(scheme);
                     avgSuccess += success;
                 }
                 avgSuccess /= activeSchemes.Count;
