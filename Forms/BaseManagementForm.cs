@@ -1,12 +1,24 @@
 using System;
 using System.Windows.Forms;
+using VillainLairManager.Services;
 
 namespace VillainLairManager.Forms
 {
     public partial class BaseManagementForm : Form
     {
-        public BaseManagementForm()
+        private readonly BaseService _baseService;
+        private readonly MinionService _minionService;
+        private readonly EquipmentService _equipmentService;
+
+        public BaseManagementForm(
+            BaseService baseService,
+            MinionService minionService,
+            EquipmentService equipmentService)
         {
+            _baseService = baseService;
+            _minionService = minionService;
+            _equipmentService = equipmentService;
+            
             InitializeComponent();
         }
 

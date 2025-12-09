@@ -1,14 +1,12 @@
 using System;
 using System.Windows.Forms;
 using VillainLairManager.Forms;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VillainLairManager
 {
     static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
@@ -16,16 +14,13 @@ namespace VillainLairManager
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Initialize database - no error handling (anti-pattern)
             DatabaseHelper.Initialize();
-
-            // Create schema if needed
             DatabaseHelper.CreateSchemaIfNotExists();
-
-            // Seed data on first run - no check if already seeded (anti-pattern)
             DatabaseHelper.SeedInitialData();
 
-            Application.Run(new MainForm());
+            var serviceProvider = ServiceConfigurator.ConfigureServices();
+            var mainForm = serviceProvider.GetRequiredService<MainForm>();
+            Application.Run(mainForm);
         }
     }
 }

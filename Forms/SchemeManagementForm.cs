@@ -40,13 +40,14 @@ public partial class SchemeManagementForm : Form
     private Label lblSuccessLikelihood;
     private Button btnLoadSelected;
 
-    public SchemeManagementForm()
+    public SchemeManagementForm(
+        SchemeService schemeService,
+        MinionService minionService,
+        EquipmentService equipmentService)
     {
-        // Initialize services
-        var factory = new RepositoryFactory(AppSettings.Instance.DatabasePath);
-        _schemeService = new SchemeService(factory.Schemes, factory.Minions, factory.Equipment);
-        _minionService = new MinionService(factory.Minions);
-        _equipmentService = new EquipmentService(factory.Equipment, factory.Schemes);
+        _schemeService = schemeService;
+        _minionService = minionService;
+        _equipmentService = equipmentService;
         
         InitializeComponent();
     }

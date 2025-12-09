@@ -1,12 +1,21 @@
 using System;
 using System.Windows.Forms;
+using VillainLairManager.Services;
 
 namespace VillainLairManager.Forms
 {
     public partial class EquipmentInventoryForm : Form
     {
-        public EquipmentInventoryForm()
+        private readonly EquipmentService _equipmentService;
+        private readonly SchemeService _schemeService;
+
+        public EquipmentInventoryForm(
+            EquipmentService equipmentService,
+            SchemeService schemeService)
         {
+            _equipmentService = equipmentService;
+            _schemeService = schemeService;
+            
             InitializeComponent();
         }
 

@@ -6,6 +6,7 @@ using VillainLairManager.Models;
 using VillainLairManager.Utils;
 using VillainLairManager.Services;
 using VillainLairManager.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VillainLairManager.Forms
 {
@@ -19,39 +20,47 @@ namespace VillainLairManager.Forms
         private MinionService _minionService;
         private BaseService _baseService;
         private EquipmentService _equipmentService;
+        private readonly IServiceProvider _serviceProvider;
         
-        public MainForm()
+        public MainForm(
+            SchemeService schemeService,
+            MinionService minionService,
+            BaseService baseService,
+            EquipmentService equipmentService,
+            IServiceProvider serviceProvider)
         {
+            _schemeService = schemeService;
+            _minionService = minionService;
+            _baseService = baseService;
+            _equipmentService = equipmentService;
+            _serviceProvider = serviceProvider;
+            
             InitializeComponent();
-            
-            // Initialize services
-            var factory = new RepositoryFactory(AppSettings.Instance.DatabasePath);
-            _schemeService = new SchemeService(factory.Schemes, factory.Minions, factory.Equipment);
-            _minionService = new MinionService(factory.Minions);
-            _baseService = new BaseService(factory.Bases, factory.Minions, factory.Equipment);
-            _equipmentService = new EquipmentService(factory.Equipment, factory.Schemes);
-            
-            LoadStatistics(); // Business logic in form load (anti-pattern)
+            LoadStatistics();
         }
 
         private void btnMinions_Click(object sender, EventArgs e)
         {
-            OpenForm(new MinionManagementForm());
+            var form = _serviceProvider.GetRequiredService<MinionManagementForm>();
+            OpenForm(form);
         }
 
         private void btnSchemes_Click(object sender, EventArgs e)
         {
-            OpenForm(new SchemeManagementForm());
+            var form = _serviceProvider.GetRequiredService<SchemeManagementForm>();
+            OpenForm(form);
         }
 
         private void btnBases_Click(object sender, EventArgs e)
         {
-            OpenForm(new BaseManagementForm());
+            var form = _serviceProvider.GetRequiredService<BaseManagementForm>();
+            OpenForm(form);
         }
 
         private void btnEquipment_Click(object sender, EventArgs e)
         {
-            OpenForm(new EquipmentInventoryForm());
+            var form = _serviceProvider.GetRequiredService<EquipmentInventoryForm>();
+            OpenForm(form);
         }
 
         private void OpenForm(Form form)
@@ -64,33 +73,18 @@ namespace VillainLairManager.Forms
         // This calculation is duplicated from models
         private void LoadStatistics()
         {
-            // Use services for data retrieval instead of direct database access
             var minions = _minionService.GetAllMinions().ToList();
             var schemes = _schemeService.GetAllSchemes().ToList();
             var bases = _baseService.GetAllBases().ToList();
             var equipment = _equipmentService.GetAllEquipment().ToList();
 
-            // Minion statistics with duplicated mood calculation
-            int happyCount = 0, grumpyCount = 0, betrayalCount = 0;
-            foreach (var minion in minions)
-            {
-                // Mood calculation duplicated from Minion.UpdateMood() (anti-pattern)
-                if (minion.LoyaltyScore > 70)
-                    happyCount++;
-                else if (minion.LoyaltyScore < 40)
-                    betrayalCount++;
-                else
-                    grumpyCount++;
-            }
+            var moodCounts = _minionService.GetMinionMoodCounts();
+            lblMinionStats.Text = $"Minions: {minions.Count} total | Happy: {moodCounts["Happy"]} | Grumpy: {moodCounts["Grumpy"]} | Plotting Betrayal: {moodCounts["Betrayal"]}";
 
-            lblMinionStats.Text = $"Minions: {minions.Count} total | Happy: {happyCount} | Grumpy: {grumpyCount} | Plotting Betrayal: {betrayalCount}";
-
-            // Scheme statistics with duplicated success calculation
             var activeSchemes = schemes.Where(s => s.Status == "Active").ToList();
             double avgSuccess = 0;
             if (activeSchemes.Any())
             {
-                // Use service for success calculation
                 foreach (var scheme in activeSchemes)
                 {
                     int success = _schemeService.CalculateSuccessLikelihood(scheme);
@@ -101,48 +95,28 @@ namespace VillainLairManager.Forms
 
             lblSchemeStats.Text = $"Evil Schemes: {schemes.Count} total | Active: {activeSchemes.Count} | Avg Success Likelihood: {avgSuccess:F1}%";
 
-            // Cost calculation (business logic in UI)
-            decimal totalMinionSalaries = 0;
-            foreach (var minion in minions)
-            {
-                totalMinionSalaries += minion.SalaryDemand;
-            }
-
-            decimal totalBaseCosts = 0;
-            foreach (var baseObj in bases)
-            {
-                totalBaseCosts += baseObj.MonthlyMaintenanceCost;
-            }
-
-            decimal totalEquipmentCosts = 0;
-            foreach (var equip in equipment)
-            {
-                totalEquipmentCosts += equip.MaintenanceCost;
-            }
-
+            decimal totalMinionSalaries = _minionService.CalculateTotalSalaryCosts();
+            decimal totalBaseCosts = _baseService.CalculateTotalMaintenanceCosts();
+            decimal totalEquipmentCosts = _equipmentService.CalculateTotalMaintenanceCosts();
             decimal totalMonthlyCost = totalMinionSalaries + totalBaseCosts + totalEquipmentCosts;
 
             lblCostStats.Text = $"Monthly Costs: Minions: ${totalMinionSalaries:N0} | Bases: ${totalBaseCosts:N0} | Equipment: ${totalEquipmentCosts:N0} | TOTAL: ${totalMonthlyCost:N0}";
 
-            // Alerts (more business logic in UI)
             var alerts = "";
 
-            // Low loyalty alert
-            var lowLoyaltyMinions = minions.Where(m => m.LoyaltyScore < 40).Count();
+            var lowLoyaltyMinions = _minionService.GetLowLoyaltyMinions().Count();
             if (lowLoyaltyMinions > 0)
             {
                 alerts += $"⚠ Warning: {lowLoyaltyMinions} minions have low loyalty and may betray you! ";
             }
 
-            // Broken equipment alert
-            var brokenEquipment = equipment.Where(e => e.Condition < 20).Count();
+            var brokenEquipment = _equipmentService.GetBrokenEquipment().Count();
             if (brokenEquipment > 0)
             {
                 alerts += $"⚠ {brokenEquipment} equipment items are broken! ";
             }
 
-            // Over budget schemes
-            var overBudgetSchemes = schemes.Where(s => s.CurrentSpending > s.Budget).Count();
+            var overBudgetSchemes = _schemeService.GetOverBudgetSchemes().Count();
             if (overBudgetSchemes > 0)
             {
                 alerts += $"⚠ {overBudgetSchemes} schemes are over budget! ";

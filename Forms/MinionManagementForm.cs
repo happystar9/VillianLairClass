@@ -18,13 +18,14 @@ public partial class MinionManagementForm : Form
     private readonly BaseService _baseService;
     private readonly SchemeService _schemeService;
 
-    public MinionManagementForm()
+    public MinionManagementForm(
+        MinionService minionService,
+        BaseService baseService,
+        SchemeService schemeService)
     {
-        // Initialize services
-        var factory = new RepositoryFactory(AppSettings.Instance.DatabasePath);
-        _minionService = new MinionService(factory.Minions);
-        _baseService = new BaseService(factory.Bases, factory.Minions, factory.Equipment);
-        _schemeService = new SchemeService(factory.Schemes, factory.Minions, factory.Equipment);
+        _minionService = minionService;
+        _baseService = baseService;
+        _schemeService = schemeService;
         
         InitializeComponent();
     }
