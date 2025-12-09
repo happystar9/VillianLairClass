@@ -5,16 +5,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using VillainLairManager.Models;
+using VillainLairManager.Services;
+using VillainLairManager.Repositories;
 
 namespace VillainLairManager.Forms;
 /// <summary>
-/// Minion management form - STUB for students to implement
-/// Should contain CRUD operations with business logic in event handlers
+/// Minion management form - Now uses service layer for business logic
 /// </summary>
 public partial class MinionManagementForm : Form
 {
+    private readonly MinionService _minionService;
+    private readonly BaseService _baseService;
+    private readonly SchemeService _schemeService;
+
     public MinionManagementForm()
     {
+        // Initialize services
+        var factory = new RepositoryFactory(AppSettings.Instance.DatabasePath);
+        _minionService = new MinionService(factory.Minions);
+        _baseService = new BaseService(factory.Bases, factory.Minions, factory.Equipment);
+        _schemeService = new SchemeService(factory.Schemes, factory.Minions, factory.Equipment);
+        
         InitializeComponent();
     }
 
@@ -55,7 +66,7 @@ public partial class MinionManagementForm : Form
 
 
 
-        var minions = DatabaseHelper.GetAllMinions();
+        var minions = _minionService.GetAllMinions().ToList();
         var binding = new BindingList<Minion>(minions);
         minionsDataGridView.DataSource = binding;
 
@@ -82,13 +93,13 @@ public partial class MinionManagementForm : Form
         var schemeLabel = new Label { Text = "Scheme:", Location = new Point(250, 35), AutoSize = true };
         var schemeCombo = new ComboBox { Location = new Point(330, 33), Size = new Size(120, 23), DropDownStyle = ComboBoxStyle.DropDownList };
 
-        var bases = DatabaseHelper.GetAllBases();
+        var bases = _baseService.GetAllBases().ToList();
         baseCombo.DataSource = bases;
         baseCombo.DisplayMember = "Name";
         baseCombo.ValueMember = "BaseId";
         baseCombo.SelectedIndex = -1;
 
-        var schemes = DatabaseHelper.GetAllSchemes();
+        var schemes = _schemeService.GetAllSchemes().ToList();
         schemeCombo.DataSource = schemes;
         schemeCombo.DisplayMember = "Name";
         schemeCombo.ValueMember = "SchemeId";
@@ -118,11 +129,19 @@ public partial class MinionManagementForm : Form
         {
             try
             {
-                var name = string.IsNullOrWhiteSpace(nameTextBox.Text) ? "New Minion" : nameTextBox.Text.Trim();
-                var specialty = string.IsNullOrWhiteSpace(specialtyTextBox.Text) ? "Unknown" : specialtyTextBox.Text.Trim();
+                var name = string.IsNullOrWhiteSpace(nameTextBox.Text) ? AppSettings.Instance.DefaultMinionName : nameTextBox.Text.Trim();
+                var specialty = string.IsNullOrWhiteSpace(specialtyTextBox.Text) ? AppSettings.Instance.DefaultSpecialty : specialtyTextBox.Text.Trim();
                 var skill = (int)skillUpDown.Value;
                 var salary = (decimal)salaryUpDown.Value;
                 var mood = moodTextBox.Text?.Trim();
+
+                // Validate specialty using service
+                if (!_minionService.IsValidSpecialty(specialty))
+                {
+                    MessageBox.Show($"Invalid specialty: {specialty}\n\nValid specialties: {string.Join(", ", AppSettings.Instance.ValidSpecialties)}",
+                        "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
                 int? baseId = null;
                 if (baseCombo.SelectedIndex >= 0 && baseCombo.SelectedValue != null)
@@ -139,14 +158,21 @@ public partial class MinionManagementForm : Form
                     Specialty = specialty,
                     SkillLevel = skill,
                     SalaryDemand = salary,
-                    LoyaltyScore = 50,
+                    LoyaltyScore = AppSettings.Instance.DefaultMinionLoyalty,
                     CurrentBaseId = baseId,
                     CurrentSchemeId = schemeId,
-                    MoodStatus = string.IsNullOrWhiteSpace(mood) ? "Neutral" : mood,
+                    MoodStatus = string.IsNullOrWhiteSpace(mood) ? AppSettings.Instance.DefaultMood : mood,
                     LastMoodUpdate = DateTime.Now
                 };
 
-                binding.Add(newMinion);
+                // Use service to create minion
+                _minionService.CreateMinion(newMinion);
+                
+                // Refresh the list to show the newly created minion with its ID
+                var refreshed = _minionService.GetAllMinions().ToList();
+                binding.Clear();
+                foreach (var m in refreshed)
+                    binding.Add(m);
 
                 // Clear inputs
                 nameTextBox.Text = string.Empty;
@@ -175,7 +201,28 @@ public partial class MinionManagementForm : Form
         };
         updateButton.Click += (sender, e) =>
         {
-            // TODO: Implement update minion logic
+            try
+            {
+                var all = binding.ToList();
+
+                foreach (var minion in all)
+                {
+                    if (minion.MinionId > 0)
+                    {
+                        _minionService.UpdateMinion(minion);
+                    }
+                    else
+                    {
+                        _minionService.CreateMinion(minion);
+                    }
+                }
+
+                MessageBox.Show("All minions saved to database.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to save minions: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         };
         this.Controls.Add(updateButton);
 
@@ -205,7 +252,7 @@ public partial class MinionManagementForm : Form
                 {
                     if (minion.MinionId > 0)
                     {
-                        DatabaseHelper.DeleteMinion(minion.MinionId);
+                        _minionService.DeleteMinion(minion.MinionId);
                     }
 
                     binding.Remove(minion);
@@ -224,7 +271,7 @@ public partial class MinionManagementForm : Form
         {
             try
             {
-                var refreshed = DatabaseHelper.GetAllMinions();
+                var refreshed = _minionService.GetAllMinions().ToList();
                 binding = new BindingList<Minion>(refreshed);
                 minionsDataGridView.DataSource = binding;
             }

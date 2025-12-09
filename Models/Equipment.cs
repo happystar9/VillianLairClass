@@ -1,5 +1,4 @@
 using System;
-using VillainLairManager.Utils;
 
 namespace VillainLairManager.Models
 {
@@ -26,10 +25,10 @@ namespace VillainLairManager.Models
             {
                 // Check if scheme is active
                 var scheme = DatabaseHelper.GetSchemeById(AssignedToSchemeId.Value);
-                if (scheme != null && scheme.Status == ConfigManager.StatusActive)
+                if (scheme != null && scheme.Status == AppSettings.Instance.StatusActive)
                 {
                     int monthsSinceMaintenance = 1; // Simplified - should calculate from LastMaintenanceDate
-                    int degradation = monthsSinceMaintenance * ConfigManager.ConditionDegradationRate;
+                    int degradation = monthsSinceMaintenance * AppSettings.Instance.ConditionDegradationRate;
                     Condition -= degradation;
 
                     if (Condition < 0) Condition = 0;
@@ -45,11 +44,11 @@ namespace VillainLairManager.Models
             decimal cost;
             if (Category == "Doomsday Device")
             {
-                cost = PurchasePrice * ConfigManager.DoomsdayMaintenanceCostPercentage;
+                cost = PurchasePrice * AppSettings.Instance.DoomsdayMaintenanceCostPercentage;
             }
             else
             {
-                cost = PurchasePrice * ConfigManager.MaintenanceCostPercentage;
+                cost = PurchasePrice * AppSettings.Instance.MaintenanceCostPercentage;
             }
 
             Condition = 100;
@@ -63,12 +62,12 @@ namespace VillainLairManager.Models
         // Check if operational
         public bool IsOperational()
         {
-            return Condition >= ConfigManager.MinEquipmentCondition;
+            return Condition >= AppSettings.Instance.MinEquipmentCondition;
         }
 
         public bool IsBroken()
         {
-            return Condition < ConfigManager.BrokenEquipmentCondition;
+            return Condition < AppSettings.Instance.BrokenEquipmentCondition;
         }
 
         // ToString for display

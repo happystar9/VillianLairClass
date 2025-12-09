@@ -14,11 +14,17 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.Drawing;
 using VillainLairManager.Models;
+using VillainLairManager.Services;
+using VillainLairManager.Repositories;
+using System.Linq;
 
 namespace VillainLairManager.Forms;
 
 public partial class SchemeManagementForm : Form
 {
+    private readonly SchemeService _schemeService;
+    private readonly MinionService _minionService;
+    private readonly EquipmentService _equipmentService;
     private DataGridView schemesDataGridView;
     private BindingList<EvilScheme> binding;
     private TextBox txtName;
@@ -36,6 +42,12 @@ public partial class SchemeManagementForm : Form
 
     public SchemeManagementForm()
     {
+        // Initialize services
+        var factory = new RepositoryFactory(AppSettings.Instance.DatabasePath);
+        _schemeService = new SchemeService(factory.Schemes, factory.Minions, factory.Equipment);
+        _minionService = new MinionService(factory.Minions);
+        _equipmentService = new EquipmentService(factory.Equipment, factory.Schemes);
+        
         InitializeComponent();
     }
 
@@ -94,7 +106,7 @@ public partial class SchemeManagementForm : Form
 
         // Removed automatic SelectionChanged handler - user will use "Load Selected" button instead
 
-        var schemes = DatabaseHelper.GetAllSchemes();
+        var schemes = _schemeService.GetAllSchemes().ToList();
         binding = new BindingList<EvilScheme>(schemes);
         schemesDataGridView.DataSource = binding;
 
@@ -289,9 +301,9 @@ public partial class SchemeManagementForm : Form
             lblSuccessLikelihood.Text = $"{scheme.SuccessLikelihood}%";
 
             // Color code the success likelihood
-            if (scheme.SuccessLikelihood >= 70)
+            if (scheme.SuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodHighThreshold)
                 lblSuccessLikelihood.ForeColor = Color.Green;
-            else if (scheme.SuccessLikelihood >= 40)
+            else if (scheme.SuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodMediumThreshold)
                 lblSuccessLikelihood.ForeColor = Color.Orange;
             else
                 lblSuccessLikelihood.ForeColor = Color.Red;
@@ -327,16 +339,7 @@ public partial class SchemeManagementForm : Form
 
     private void AddButton_Click(object sender, EventArgs e)
     {
-        // Budget validation in button handler (anti-pattern)
-        if (numCurrentSpending.Value > numBudget.Value)
-        {
-            var result = MessageBox.Show("Warning: Current spending exceeds budget! This will reduce success likelihood. Continue?", 
-                "Budget Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-            if (result != DialogResult.Yes)
-                return;
-        }
-
-        // Validation logic in UI (anti-pattern)
+        // Validation
         if (string.IsNullOrWhiteSpace(txtName.Text))
         {
             MessageBox.Show("Scheme name is required!", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -346,6 +349,21 @@ public partial class SchemeManagementForm : Form
         if (string.IsNullOrWhiteSpace(txtRequiredSpecialty.Text))
         {
             MessageBox.Show("Required specialty is required!", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        // Validate specialty using service
+        if (!_schemeService.IsValidSpecialty(txtRequiredSpecialty.Text))
+        {
+            MessageBox.Show($"Invalid specialty: {txtRequiredSpecialty.Text}\n\nValid specialties: {string.Join(", ", AppSettings.Instance.ValidSpecialties)}",
+                "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        // Validate skill level using service
+        if (!_schemeService.IsValidSkillLevel((int)numRequiredSkillLevel.Value))
+        {
+            MessageBox.Show("Skill level must be between 1 and 10!", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
@@ -369,14 +387,25 @@ public partial class SchemeManagementForm : Form
                 StartDate = cmbStatus.SelectedItem.ToString() == "Active" ? (DateTime?)dtpStartDate.Value : null,
                 TargetCompletionDate = dtpTargetCompletion.Value,
                 DiabolicalRating = (int)numDiabolicalRating.Value,
-                SuccessLikelihood = CalculateSuccessLikelihoodInUI(null) // Calculate in UI (anti-pattern)
+                SuccessLikelihood = 0 // Will be calculated by service
             };
 
-            // Direct database call from event handler (anti-pattern)
-            DatabaseHelper.InsertScheme(newScheme);
+            // Use service to create scheme
+            _schemeService.CreateScheme(newScheme);
+
+            // Calculate success likelihood using service
+            newScheme.SuccessLikelihood = _schemeService.CalculateSuccessLikelihood(newScheme);
+            _schemeService.UpdateScheme(newScheme);
+
+            // Check if over budget and warn
+            if (_schemeService.IsSchemeOverBudget(newScheme))
+            {
+                MessageBox.Show("Warning: This scheme is over budget! Success likelihood has been reduced.",
+                    "Budget Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
 
             // Reload to get the ID
-            var schemes = DatabaseHelper.GetAllSchemes();
+            var schemes = _schemeService.GetAllSchemes().ToList();
             binding.Clear();
             foreach (var s in schemes)
                 binding.Add(s);
@@ -401,19 +430,18 @@ public partial class SchemeManagementForm : Form
         if (scheme == null)
             return;
 
-        // Budget validation in button handler (anti-pattern)
-        if (numCurrentSpending.Value > numBudget.Value)
-        {
-            var result = MessageBox.Show("Warning: Current spending exceeds budget! This will reduce success likelihood. Continue?", 
-                "Budget Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-            if (result != DialogResult.Yes)
-                return;
-        }
-
-        // Validation logic in UI (anti-pattern)
+        // Validation
         if (string.IsNullOrWhiteSpace(txtName.Text))
         {
             MessageBox.Show("Scheme name is required!", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        // Validate specialty using service
+        if (!_schemeService.IsValidSpecialty(txtRequiredSpecialty.Text))
+        {
+            MessageBox.Show($"Invalid specialty: {txtRequiredSpecialty.Text}\n\nValid specialties: {string.Join(", ", AppSettings.Instance.ValidSpecialties)}",
+                "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
@@ -429,10 +457,19 @@ public partial class SchemeManagementForm : Form
             scheme.StartDate = cmbStatus.SelectedItem.ToString() == "Active" ? (DateTime?)dtpStartDate.Value : null;
             scheme.TargetCompletionDate = dtpTargetCompletion.Value;
             scheme.DiabolicalRating = (int)numDiabolicalRating.Value;
-            scheme.SuccessLikelihood = CalculateSuccessLikelihoodInUI(scheme); // Calculate in UI (anti-pattern)
+            
+            // Calculate success likelihood using service
+            scheme.SuccessLikelihood = _schemeService.CalculateSuccessLikelihood(scheme);
 
-            // Direct database call from event handler (anti-pattern)
-            DatabaseHelper.UpdateScheme(scheme);
+            // Use service to update scheme
+            _schemeService.UpdateScheme(scheme);
+
+            // Check if over budget and warn
+            if (_schemeService.IsSchemeOverBudget(scheme))
+            {
+                MessageBox.Show("Warning: This scheme is over budget!",
+                    "Budget Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
 
             binding.ResetBindings();
             schemesDataGridView.Refresh();
@@ -468,8 +505,7 @@ public partial class SchemeManagementForm : Form
             {
                 if (scheme.SchemeId > 0)
                 {
-                    // Direct database call from event handler (anti-pattern)
-                    DatabaseHelper.DeleteScheme(scheme.SchemeId);
+                    _schemeService.DeleteScheme(scheme.SchemeId);
                 }
                 binding.Remove(scheme);
             }
@@ -486,8 +522,7 @@ public partial class SchemeManagementForm : Form
     {
         try
         {
-            // Direct database call from event handler (anti-pattern)
-            var schemes = DatabaseHelper.GetAllSchemes();
+            var schemes = _schemeService.GetAllSchemes().ToList();
             binding.Clear();
             foreach (var scheme in schemes)
             {
@@ -514,15 +549,15 @@ public partial class SchemeManagementForm : Form
         if (scheme == null)
             return;
 
-        // Success likelihood calculation duplicated in UI (major anti-pattern)
-        int newSuccessLikelihood = CalculateSuccessLikelihoodInUI(scheme);
+        // Use service to calculate success likelihood
+        int newSuccessLikelihood = _schemeService.CalculateSuccessLikelihood(scheme);
         scheme.SuccessLikelihood = newSuccessLikelihood;
         lblSuccessLikelihood.Text = $"{newSuccessLikelihood}%";
 
         // Color code the success likelihood
-        if (newSuccessLikelihood >= 70)
+        if (newSuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodHighThreshold)
             lblSuccessLikelihood.ForeColor = Color.Green;
-        else if (newSuccessLikelihood >= 40)
+        else if (newSuccessLikelihood >= AppSettings.Instance.SuccessLikelihoodMediumThreshold)
             lblSuccessLikelihood.ForeColor = Color.Orange;
         else
             lblSuccessLikelihood.ForeColor = Color.Red;
@@ -532,71 +567,6 @@ public partial class SchemeManagementForm : Form
 
         MessageBox.Show($"Success likelihood recalculated: {newSuccessLikelihood}%", "Calculation Complete", 
             MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
-
-    // Success likelihood calculation duplicated in UI (major anti-pattern)
-    // This is a duplicate of the calculation in EvilScheme.CalculateSuccessLikelihood()
-    private int CalculateSuccessLikelihoodInUI(EvilScheme scheme)
-    {
-        int baseSuccess = 50;
-
-        // Get assigned minions from database (UI accessing database - anti-pattern)
-        var assignedMinions = DatabaseHelper.GetAllMinions();
-        int matchingMinions = 0;
-        int totalMinions = 0;
-
-        if (scheme != null)
-        {
-            foreach (var minion in assignedMinions)
-            {
-                if (minion.CurrentSchemeId == scheme.SchemeId)
-                {
-                    totalMinions++;
-                    if (minion.Specialty == scheme.RequiredSpecialty)
-                    {
-                        matchingMinions++;
-                    }
-                }
-            }
-        }
-
-        int minionBonus = matchingMinions * 10;
-
-        // Get assigned equipment
-        var assignedEquipment = DatabaseHelper.GetAllEquipment();
-        int workingEquipmentCount = 0;
-
-        if (scheme != null)
-        {
-            foreach (var equipment in assignedEquipment)
-            {
-                if (equipment.AssignedToSchemeId == scheme.SchemeId && equipment.Condition >= 50)
-                {
-                    workingEquipmentCount++;
-                }
-            }
-        }
-
-        int equipmentBonus = workingEquipmentCount * 5;
-
-        // Penalties
-        decimal budget = scheme?.Budget ?? numBudget.Value;
-        decimal spending = scheme?.CurrentSpending ?? numCurrentSpending.Value;
-        int budgetPenalty = (spending > budget) ? -20 : 0;
-
-        int resourcePenalty = (totalMinions >= 2 && matchingMinions >= 1) ? 0 : -15;
-
-        DateTime targetDate = scheme?.TargetCompletionDate ?? dtpTargetCompletion.Value;
-        int timelinePenalty = (DateTime.Now > targetDate) ? -25 : 0;
-
-        // Calculate final
-        int success = baseSuccess + minionBonus + equipmentBonus + budgetPenalty + resourcePenalty + timelinePenalty;
-
-        // Clamp to 0-100
-        if (success < 0) success = 0;
-        if (success > 100) success = 100;
-
-        return success;
     }
 }
 
