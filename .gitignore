@@ -1,0 +1,67 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio cache/options
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# Rider
+.idea/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Mono auto generated files
+mono_crash.*
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Test coverage
+TestResults/
+coverage.cobertura.xml
+*.coverage
+*.coveragexml
