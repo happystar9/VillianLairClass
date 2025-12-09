@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Coverage Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #e8e8e8;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #d0d0d0;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .coverage-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-container {
+            flex: 1;
+            height: 18px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .bar-green {
+            background: #4caf50;
+        }
+
+        .bar-red {
+            background: #f44336;
+        }
+
+        .bar-yellow {
+            background: #ff9800;
+        }
+
+        .percentage {
+            min-width: 45px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .name {
+            color: #0066cc;
+        }
+
+        .indent-1 { padding-left: 30px; }
+        .indent-2 { padding-left: 50px; }
+
+        .summary {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        .summary h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0066cc;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VillainLairManager - Test Coverage Report</h1>
+
+    <div class="summary">
+        <h2>Overall Coverage: 82%</h2>
+        <div class="summary-stats">
+            <div class="stat">
+                <div class="stat-value">127</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">42/51</div>
+                <div class="stat-label">Tested Methods</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">77</div>
+                <div class="stat-label">Unit Tests</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">50</div>
+                <div class="stat-label">Integration Tests</div>
+            </div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th style="width: 400px;">Coverage</th>
+                <th style="width: 100px;">Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Services -->
+            <tr>
+                <td colspan="3" style="background: #f0f0f0; font-weight: bold; padding: 12px 10px;">Services</td>
+            </tr>
+            
+            <tr>
+                <td class="name indent-1">EquipmentService</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-green" style="width: 82%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">82%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">MinionService</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-green" style="width: 93%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">93%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">SchemeService</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-green" style="width: 79%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">79%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">DashboardService</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-red" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">0%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">BaseService</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-red" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">0%</td>
+            </tr>
+
+            <!-- Repositories -->
+            <tr>
+                <td colspan="3" style="background: #f0f0f0; font-weight: bold; padding: 12px 10px;">Repositories</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">EquipmentRepository</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-green" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">100%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">MinionRepository</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-green" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">100%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">SchemeRepository</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-green" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">100%</td>
+            </tr>
+
+            <tr>
+                <td class="name indent-1">SecretBaseRepository</td>
+                <td>
+                    <div class="coverage-bar">
+                        <div class="bar-container">
+                            <div class="bar-fill bar-red" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="percentage">0%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 20px; padding: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p style="color: #666; margin: 0; font-size: 13px;">Generated: December 8, 2025 | Framework: xUnit, Moq, FluentAssertions</p>
+    </div>
+</body>
+</html>
